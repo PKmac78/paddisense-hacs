@@ -3,18 +3,19 @@
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 [![GitHub Release](https://img.shields.io/github/release/PKmac78/paddisense-hacs.svg)](https://github.com/PKmac78/paddisense-hacs/releases)
 
-**PaddiSense** is a modular farm management platform for Home Assistant OS (HAOS). It provides tools for managing paddocks, bays, seasons, inventory, assets, weather stations, and irrigation systems.
+**PaddiSense** is a modular farm management platform for Home Assistant OS (HAOS). It provides tools for managing farming enterprises with a particular focus on irrigation systems, inventory management, asset management and weather data.
 
 ## Features
 
-- **Farm Registry**: Core paddock/bay/season management with auto-generated IDs
+- **Farm Registry**: Core setup- Manage farm, paddocks and system setup
 - **Modular Design**: Install only the modules you need
-  - **IPM** - Inventory & Product Management
-  - **ASM** - Asset Service Management
-  - **Weather** - Weather station integration
-  - **PWM** - Paddy Water Management
-- **Offline-First**: All core workflows run without internet
-- **Mobile-First UI**: Large touch targets, dark mode compatible
+  - **IPM** - Farm Inventory & Product Management- Track key farming products like chemcials, fertiliser and grain
+  - **ASM** - Asset Service Manager- track asset data, parts and service tasks
+  - **Weather** - Bring all of your weathers sensor together
+  - **PWM** - Precision Water Management- Irrigate your rice bays which managing your pumps and channels
+  - ** Others in the future** - watch this space
+- **Farmer Focussed**: focussed on farming activities- dsigned by farmers for farmers
+- **Mobiel and desktop**: Made for big thumbs
 
 ## License Key System
 
@@ -22,25 +23,21 @@ PaddiSense uses a **seasonal license key** system for access control and updates
 
 ### How It Works
 
-- Each grower receives a **single license key** from their administrator at the start of each season
-- The license key contains:
-  - Grower and farm identity
-  - Season expiry date
-  - Enabled modules (IPM, ASM, Weather, PWM)
-  - Repository access credentials (embedded GitHub token)
+- Each Grower can request a **single license key** from the administrator
 - The license key is entered during initial setup or renewed via the options menu
 
 ### What Happens When a License Expires?
 
 **Your existing installation continues working:**
 - All installed modules remain functional
-- Existing data (paddocks, bays, seasons, inventory, etc.) is preserved
+- Your setup continues to work- your data is your data
 - Day-to-day operations are unaffected
 
 **What is prevented without a valid license:**
-- Downloading updates from the PaddiSense repository
+- Downloading updates for PaddiSense 
 - Installing new modules
 - Receiving new features and enhancements
+- Bug fixes
 
 ### Renewing Your License
 
