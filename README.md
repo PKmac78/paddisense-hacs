@@ -15,7 +15,7 @@
   - **PWM** - Precision Water Management- Irrigate your rice bays which managing your pumps and channels
   - ** Others in the future** - watch this space
 - **Farmer Focussed**: focussed on farming activities- dsigned by farmers for farmers
-- **Mobiel and desktop**: Made for big thumbs
+- **Mobile friendly**: Made for big thumbs
 
 ## License Key System
 
