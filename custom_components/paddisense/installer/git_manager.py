@@ -19,11 +19,24 @@ _LOGGER = logging.getLogger(__name__)
 class GitManager:
     """Manage git operations for PaddiSense repository."""
 
-    def __init__(self) -> None:
+    def __init__(self, token: str | None = None) -> None:
         """Initialize the git manager."""
         self.repo_dir = PADDISENSE_DIR
-        self.repo_url = PADDISENSE_REPO_URL
+        self._base_url = PADDISENSE_REPO_URL
         self.branch = PADDISENSE_REPO_BRANCH
+        self._token = token
+
+    @property
+    def repo_url(self) -> str:
+        """Get repo URL with token if available."""
+        if self._token:
+            # https://TOKEN@github.com/user/repo.git
+            return self._base_url.replace("https://", f"https://{self._token}@")
+        return self._base_url
+
+    def set_token(self, token: str | None) -> None:
+        """Update token for authenticated operations."""
+        self._token = token
 
     def is_git_available(self) -> bool:
         """Check if git is available on the system."""

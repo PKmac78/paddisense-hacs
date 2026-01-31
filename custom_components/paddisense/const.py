@@ -84,6 +84,14 @@ CONF_IMPORT_EXISTING = "import_existing"
 CONF_SELECTED_MODULES = "selected_modules"
 CONF_INSTALL_TYPE = "install_type"
 
+# License key configuration
+CONF_LICENSE_KEY = "license_key"
+CONF_LICENSE_GROWER = "license_grower"
+CONF_LICENSE_EXPIRY = "license_expiry"
+CONF_LICENSE_MODULES = "license_modules"
+CONF_LICENSE_SEASON = "license_season"
+CONF_GITHUB_TOKEN = "github_token"
+
 # Install types
 INSTALL_TYPE_FRESH = "fresh"
 INSTALL_TYPE_UPGRADE = "upgrade"

@@ -27,6 +27,13 @@
           "farm_name": "Farm Name"
         }
       },
+      "license": {
+        "title": "License Key",
+        "description": "Enter your PaddiSense license key for the current season.\n\nFarm: {farm_name}\nGrowerContact your administrator if you don't have a key.",
+        "data": {
+          "license_key": "License Key"
+        }
+      },
       "modules": {
         "title": "Select Modules",
         "description": "Choose which modules to install. You can add or remove modules later from PaddiSense Manager.\n\n**{ipm_name}**: {ipm_desc}\n\n**{asm_name}**: {asm_desc}\n\n**{weather_name}**: {weather_desc}\n\n**{pwm_name}**: {pwm_desc}",
@@ -50,7 +57,12 @@
     "error": {
       "paddock_error": "Failed to create paddock",
       "delete_error": "Failed to delete",
-      "season_error": "Failed to create/update season"
+      "season_error": "Failed to create/update season",
+      "invalid_format": "Invalid license key format",
+      "invalid_key": "License key is invalid or corrupted",
+      "expired": "This license key has expired",
+      "missing_cryptography": "Cryptography library not installed",
+      "missing_public_key": "License verification key not found"
     }
   },
   "options": {
@@ -58,10 +70,18 @@
       "init": {
         "title": "PaddiSense Options",
         "menu_options": {
+          "renew_license": "Renew License",
           "module_management": "Manage Modules",
           "paddock_management": "Manage Paddocks",
           "season_management": "Manage Seasons",
           "backup_restore": "Backup & Restore"
+        }
+      },
+      "renew_license": {
+        "title": "Renew License",
+        "description": "Current license expires: {current_expiry}\nGrower: {grower}\n\nPaste your new license key below:",
+        "data": {
+          "license_key": "New License Key"
         }
       },
       "module_management": {

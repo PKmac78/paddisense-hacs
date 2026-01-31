@@ -13,6 +13,7 @@ from homeassistant.helpers.typing import ConfigType
 
 from .const import (
     AVAILABLE_MODULES,
+    CONF_GITHUB_TOKEN,
     DOMAIN,
     EVENT_DATA_UPDATED,
     EVENT_MODULES_CHANGED,
@@ -169,8 +170,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     backend = RegistryBackend()
     await hass.async_add_executor_job(backend.init)
 
-    # Initialize installer components
-    git_manager = GitManager()
+    # Initialize installer components with token from license
+    git_manager = GitManager(token=entry.data.get(CONF_GITHUB_TOKEN))
     module_manager = ModuleManager()
     backup_manager = BackupManager()
     config_writer = ConfigWriter()

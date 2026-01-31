@@ -14,9 +14,15 @@ from .const import (
     AVAILABLE_MODULES,
     CONF_FARM_ID,
     CONF_FARM_NAME,
+    CONF_GITHUB_TOKEN,
     CONF_GROWER_NAME,
     CONF_IMPORT_EXISTING,
     CONF_INSTALL_TYPE,
+    CONF_LICENSE_EXPIRY,
+    CONF_LICENSE_GROWER,
+    CONF_LICENSE_KEY,
+    CONF_LICENSE_MODULES,
+    CONF_LICENSE_SEASON,
     CONF_SELECTED_MODULES,
     DEFAULT_BAY_PREFIX,
     DEFAULT_FARM_ID,
@@ -26,6 +32,7 @@ from .const import (
     INSTALL_TYPE_UPGRADE,
     MODULE_METADATA,
 )
+from .license import LicenseError, validate_license
 from .helpers import (
     existing_data_detected,
     existing_repo_detected,
@@ -88,7 +95,7 @@ class PaddiSenseConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Welcome screen for fresh installation."""
         if user_input is not None:
             self._data[CONF_INSTALL_TYPE] = INSTALL_TYPE_FRESH
-            return await self.async_step_git_check()
+            return await self.async_step_farm()
 
         return self.async_show_form(
             step_id="welcome_fresh",
@@ -104,13 +111,8 @@ class PaddiSenseConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             install_type = user_input.get("install_type", INSTALL_TYPE_UPGRADE)
             self._data[CONF_INSTALL_TYPE] = install_type
-
-            if install_type == INSTALL_TYPE_FRESH:
-                # User wants fresh start - go to git check
-                return await self.async_step_git_check()
-            else:
-                # Upgrade existing - skip git clone, go to farm setup
-                return await self.async_step_farm()
+            # Both fresh and upgrade go to farm setup first
+            return await self.async_step_farm()
 
         return self.async_show_form(
             step_id="welcome_upgrade",
@@ -139,7 +141,7 @@ class PaddiSenseConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             else:
                 self._data[CONF_INSTALL_TYPE] = INSTALL_TYPE_FRESH
 
-            return await self.async_step_git_check()
+            return await self.async_step_farm()
 
         return self.async_show_form(
             step_id="welcome_import",
@@ -157,7 +159,7 @@ class PaddiSenseConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self, user_input: dict | None = None
     ) -> FlowResult:
         """Check if git is available."""
-        git_manager = GitManager()
+        git_manager = GitManager(token=self._data.get(CONF_GITHUB_TOKEN))
         self._git_available = await self.hass.async_add_executor_job(
             git_manager.is_git_available
         )
@@ -165,19 +167,14 @@ class PaddiSenseConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if not self._git_available:
             return self.async_abort(reason="git_not_available")
 
-        # Check network connectivity by testing repo access
-        # For now, just proceed to farm setup or clone
-        if self._data.get(CONF_INSTALL_TYPE) == INSTALL_TYPE_UPGRADE:
-            # Skip clone, go to farm
-            return await self.async_step_farm()
-        else:
-            return await self.async_step_clone_repo()
+        # Proceed to clone/pull repo
+        return await self.async_step_clone_repo()
 
     async def async_step_clone_repo(
         self, user_input: dict | None = None
     ) -> FlowResult:
         """Clone the PaddiSense repository."""
-        git_manager = GitManager()
+        git_manager = GitManager(token=self._data.get(CONF_GITHUB_TOKEN))
 
         # Check if already cloned
         is_cloned = await self.hass.async_add_executor_job(git_manager.is_repo_cloned)
@@ -195,7 +192,7 @@ class PaddiSenseConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 description_placeholders={"error": result.get("error", "Unknown error")},
             )
 
-        return await self.async_step_farm()
+        return await self.async_step_modules()
 
     async def async_step_farm(
         self, user_input: dict | None = None
@@ -208,7 +205,7 @@ class PaddiSenseConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._data[CONF_FARM_NAME] = user_input[CONF_FARM_NAME]
             self._data[CONF_FARM_ID] = DEFAULT_FARM_ID
 
-            return await self.async_step_modules()
+            return await self.async_step_license()
 
         # Try to get defaults from server.yaml
         server_config = await self.hass.async_add_executor_job(load_server_yaml)
@@ -235,30 +232,77 @@ class PaddiSenseConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
+    async def async_step_license(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """License key validation step."""
+        errors = {}
+
+        if user_input is not None:
+            key = user_input.get(CONF_LICENSE_KEY, "").strip()
+
+            try:
+                license_info = await self.hass.async_add_executor_job(
+                    validate_license, key
+                )
+
+                # Store license data
+                self._data[CONF_LICENSE_KEY] = key
+                self._data[CONF_LICENSE_GROWER] = license_info.grower
+                self._data[CONF_LICENSE_EXPIRY] = license_info.expiry.isoformat()
+                self._data[CONF_LICENSE_MODULES] = license_info.modules
+                self._data[CONF_LICENSE_SEASON] = license_info.season
+                self._data[CONF_GITHUB_TOKEN] = license_info.github_token
+
+                # Auto-fill grower name if license grower differs
+                if license_info.grower and not self._data.get(CONF_GROWER_NAME):
+                    self._data[CONF_GROWER_NAME] = license_info.grower
+
+                return await self.async_step_git_check()
+
+            except LicenseError as err:
+                errors["base"] = str(err)
+
+        return self.async_show_form(
+            step_id="license",
+            data_schema=vol.Schema({
+                vol.Required(CONF_LICENSE_KEY): str,
+            }),
+            errors=errors,
+            description_placeholders={
+                "grower_name": self._data.get(CONF_GROWER_NAME, ""),
+                "farm_name": self._data.get(CONF_FARM_NAME, ""),
+            },
+        )
+
     async def async_step_modules(
         self, user_input: dict | None = None
     ) -> FlowResult:
         """Handle module selection step."""
         errors = {}
 
+        # Get allowed modules from license (default to all if no license)
+        allowed_modules = self._data.get(CONF_LICENSE_MODULES, AVAILABLE_MODULES)
+
         if user_input is not None:
-            # Collect selected modules
+            # Collect selected modules (only from allowed list)
             self._selected_modules = []
             for module_id in AVAILABLE_MODULES:
-                if user_input.get(f"module_{module_id}", False):
-                    self._selected_modules.append(module_id)
+                if module_id in allowed_modules:
+                    if user_input.get(f"module_{module_id}", False):
+                        self._selected_modules.append(module_id)
 
             self._data[CONF_SELECTED_MODULES] = self._selected_modules
 
             return await self.async_step_install()
 
-        # Build schema with module checkboxes
+        # Build schema with module checkboxes (only show licensed modules)
         schema_dict = {}
         for module_id in AVAILABLE_MODULES:
-            meta = MODULE_METADATA.get(module_id, {})
-            # Default IPM and ASM to checked
-            default = module_id in ["ipm", "asm"]
-            schema_dict[vol.Optional(f"module_{module_id}", default=default)] = bool
+            if module_id in allowed_modules:
+                # Default IPM and ASM to checked if licensed
+                default = module_id in ["ipm", "asm"]
+                schema_dict[vol.Optional(f"module_{module_id}", default=default)] = bool
 
         return self.async_show_form(
             step_id="modules",
@@ -343,11 +387,52 @@ class PaddiSenseOptionsFlow(config_entries.OptionsFlow):
         return self.async_show_menu(
             step_id="init",
             menu_options=[
+                "renew_license",
                 "module_management",
                 "paddock_management",
                 "season_management",
                 "backup_restore",
             ],
+        )
+
+    async def async_step_renew_license(
+        self, user_input: dict | None = None
+    ) -> FlowResult:
+        """Renew license key (simple copy-paste)."""
+        errors = {}
+
+        if user_input is not None:
+            key = user_input.get(CONF_LICENSE_KEY, "").strip()
+            try:
+                license_info = await self.hass.async_add_executor_job(
+                    validate_license, key
+                )
+                # Update config entry with new license data
+                new_data = {**self._config_entry.data}
+                new_data[CONF_LICENSE_KEY] = key
+                new_data[CONF_LICENSE_GROWER] = license_info.grower
+                new_data[CONF_LICENSE_EXPIRY] = license_info.expiry.isoformat()
+                new_data[CONF_LICENSE_MODULES] = license_info.modules
+                new_data[CONF_LICENSE_SEASON] = license_info.season
+                new_data[CONF_GITHUB_TOKEN] = license_info.github_token
+
+                self.hass.config_entries.async_update_entry(
+                    self._config_entry, data=new_data
+                )
+                return self.async_create_entry(title="", data={})
+            except LicenseError as err:
+                errors["base"] = str(err)
+
+        return self.async_show_form(
+            step_id="renew_license",
+            data_schema=vol.Schema({
+                vol.Required(CONF_LICENSE_KEY): str,
+            }),
+            errors=errors,
+            description_placeholders={
+                "current_expiry": self._config_entry.data.get(CONF_LICENSE_EXPIRY, "Unknown"),
+                "grower": self._config_entry.data.get(CONF_LICENSE_GROWER, "Unknown"),
+            },
         )
 
     async def async_step_module_management(
