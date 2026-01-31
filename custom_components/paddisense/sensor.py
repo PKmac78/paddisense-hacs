@@ -17,6 +17,12 @@ from .const import (
     ATTR_LAST_CHECKED,
     ATTR_LATEST_VERSION,
     ATTR_UPDATE_AVAILABLE,
+    CONF_LICENSE_EXPIRY,
+    CONF_LICENSE_GROWER,
+    CONF_LICENSE_MODULES,
+    CONF_LICENSE_SEASON,
+    CONF_GROWER_NAME,
+    CONF_FARM_NAME,
     DOMAIN,
     EVENT_DATA_UPDATED,
     EVENT_MODULES_CHANGED,
@@ -103,6 +109,8 @@ class PaddiSenseVersionSensor(SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return additional attributes."""
+        # Get license info from config entry
+        entry_data = self._entry.data
         return {
             ATTR_INSTALLED_VERSION: get_version(),
             ATTR_LATEST_VERSION: self._latest_version,
@@ -110,6 +118,13 @@ class PaddiSenseVersionSensor(SensorEntity):
             ATTR_LAST_CHECKED: self._last_checked,
             ATTR_INSTALLED_MODULES: self._installed_modules,
             ATTR_AVAILABLE_MODULES: self._available_modules,
+            # License info
+            "license_grower": entry_data.get(CONF_LICENSE_GROWER, "Unknown"),
+            "license_expiry": entry_data.get(CONF_LICENSE_EXPIRY, "Unknown"),
+            "license_modules": entry_data.get(CONF_LICENSE_MODULES, []),
+            "license_season": entry_data.get(CONF_LICENSE_SEASON, "Unknown"),
+            "grower_name": entry_data.get(CONF_GROWER_NAME, "Unknown"),
+            "farm_name": entry_data.get(CONF_FARM_NAME, "Unknown"),
         }
 
     async def async_update(self) -> None:
