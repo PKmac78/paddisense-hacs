@@ -367,3 +367,7 @@ restore_backup:
 rollback:
   name: Rollback
   description: Rollback to previous version
+
+install_hacs_cards:
+  name: Install Required HACS Cards
+  description: Install button-card and card-mod from HACS (required for PaddiSense dashboards)
