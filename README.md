@@ -9,11 +9,13 @@
 
 - **Farm Registry**: Core setup- Manage farm, paddocks and system setup
 - **Modular Design**: Install only the modules you need
-  - **IPM** - Farm Inventory & Product Management- Track key farming products like chemcials, fertiliser and grain
-  - **ASM** - Asset Service Manager- track asset data, parts and service tasks
-  - **Weather** - Bring all of your weathers sensor together
-  - **PWM** - Precision Water Management- Irrigate your rice bays which managing your pumps and channels
-  - ** Others in the future** - watch this space
+  - **IPM** - Farm Inventory & Product Management - Track key farming products like chemicals, fertiliser and grain
+  - **ASM** - Asset Service Manager - Track asset data, parts and service tasks
+  - **STR** - Stock Tracker - Livestock mob inventory and movement tracking
+  - **Weather** - Bring all of your weather sensors together
+  - **PWM** - Precision Water Management - Irrigate your rice bays while managing your pumps and channels
+  - **RTR** - Real Time Rice - Crop growth predictions and season tracking
+  - **More coming soon** - Watch this space
 - **Farmer Focussed**: focussed on farming activities- dsigned by farmers for farmers
 - **Mobile friendly**: Made for big thumbs
 
