@@ -29,6 +29,7 @@ from .const import (
 )
 from .helpers import get_version
 from .registry.sensor import PaddiSenseRegistrySensor
+from .rtr.sensor import get_rtr_sensors
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -43,6 +44,13 @@ async def async_setup_entry(
         PaddiSenseRegistrySensor(hass, entry),
         PaddiSenseVersionSensor(hass, entry),
     ]
+
+    # Add RTR sensors
+    rtr_backend = hass.data.get(DOMAIN, {}).get("rtr_backend")
+    if rtr_backend:
+        rtr_sensors = get_rtr_sensors(hass, entry, rtr_backend)
+        entities.extend(rtr_sensors)
+
     async_add_entities(entities, True)
 
 

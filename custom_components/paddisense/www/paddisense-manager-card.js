@@ -62,6 +62,13 @@ class PaddiSenseManagerCard extends HTMLElement {
     const installedModules = attrs.installed_modules || [];
     const availableModules = attrs.available_modules || [];
 
+    // RTR sensor data
+    const rtrEntity = this._hass.states['sensor.paddisense_rtr'];
+    const rtrAttrs = rtrEntity ? (rtrEntity.attributes || {}) : {};
+    const rtrConfigured = rtrAttrs.rtr_url_set || false;
+    const rtrLastUpdated = rtrAttrs.rtr_last_updated || null;
+    const rtrPaddockCount = rtrAttrs.rtr_paddock_count || 0;
+
     this.shadowRoot.innerHTML = `
       <style>
         :host {
@@ -264,6 +271,59 @@ class PaddiSenseManagerCard extends HTMLElement {
           flex: none;
           padding: 10px 16px;
         }
+
+        .input-group {
+          display: flex;
+          gap: 8px;
+          margin-bottom: 12px;
+        }
+
+        .input-group input {
+          flex: 1;
+          padding: 12px;
+          border: 1px solid rgba(255,255,255,0.2);
+          border-radius: 8px;
+          background: rgba(255,255,255,0.05);
+          color: var(--text-primary);
+          font-size: 0.9em;
+        }
+
+        .input-group input::placeholder {
+          color: var(--text-secondary);
+        }
+
+        .input-group input:focus {
+          outline: none;
+          border-color: var(--primary-color);
+        }
+
+        .input-group button {
+          flex: none;
+        }
+
+        .status-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 4px 10px;
+          border-radius: 12px;
+          font-size: 0.8em;
+          font-weight: 500;
+        }
+
+        .status-badge.configured {
+          background: rgba(40, 167, 69, 0.2);
+          color: var(--success-color);
+        }
+
+        .status-badge.not-configured {
+          background: rgba(255,255,255,0.1);
+          color: var(--text-secondary);
+        }
+
+        .rtr-icon {
+          font-size: 1.2em;
+        }
       </style>
 
       <ha-card>
@@ -366,6 +426,49 @@ class PaddiSenseManagerCard extends HTMLElement {
             </button>
           </div>
         </div>
+
+        <!-- Real Time Rice Section -->
+        <div class="section">
+          <div class="section-title">
+            <span class="rtr-icon">🌾</span> Real Time Rice
+          </div>
+          <div class="status-card">
+            <div class="status-row">
+              <span class="status-label">Status</span>
+              <span class="status-badge ${rtrConfigured ? 'configured' : 'not-configured'}">
+                ${rtrConfigured ? '✓ Configured' : 'Not configured'}
+              </span>
+            </div>
+            ${rtrConfigured ? `
+            <div class="status-row">
+              <span class="status-label">Paddocks</span>
+              <span class="status-value">${rtrPaddockCount}</span>
+            </div>
+            <div class="status-row">
+              <span class="status-label">Last Updated</span>
+              <span class="status-value">${rtrLastUpdated ? this._formatDate(rtrLastUpdated) : 'Never'}</span>
+            </div>
+            ` : ''}
+            <div class="input-group" style="margin-top: 12px;">
+              <input
+                type="text"
+                id="rtr-url-input"
+                placeholder="Paste Real Time Rice dashboard URL..."
+                value=""
+              />
+              <button class="primary" onclick="this.getRootNode().host._saveRtrUrl()">
+                Save
+              </button>
+            </div>
+            ${rtrConfigured ? `
+            <div class="button-row">
+              <button class="secondary" onclick="this.getRootNode().host._refreshRtrData()">
+                Refresh Data
+              </button>
+            </div>
+            ` : ''}
+          </div>
+        </div>
       </ha-card>
     `;
   }
@@ -440,6 +543,22 @@ class PaddiSenseManagerCard extends HTMLElement {
     event.detail = { entityId: this._config.entity };
     this.dispatchEvent(event);
   }
+
+  _saveRtrUrl() {
+    const input = this.shadowRoot.getElementById('rtr-url-input');
+    if (!input || !input.value.trim()) {
+      alert('Please enter a Real Time Rice dashboard URL.');
+      return;
+    }
+    this._callService('paddisense', 'set_rtr_url', { url: input.value.trim() });
+    input.value = '';
+    alert('RTR URL saved. Data will be refreshed automatically.');
+  }
+
+  _refreshRtrData() {
+    this._callService('paddisense', 'refresh_rtr_data');
+    alert('RTR data refresh started.');
+  }
 }
 
 // Register the card
@@ -454,7 +573,7 @@ window.customCards.push({
   preview: true,
 });
 
-console.info('%c PADDISENSE-MANAGER-CARD %c v1.0.0 ',
+console.info('%c PADDISENSE-MANAGER-CARD %c v1.1.0 ',
   'background:#0066cc;color:white;font-weight:bold;padding:2px 6px;border-radius:3px 0 0 3px;',
   'background:#333;color:white;padding:2px 6px;border-radius:0 3px 3px 0;'
 );

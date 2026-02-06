@@ -39,7 +39,18 @@ PADDISENSE_REPO_BRANCH = "main"
 # MODULES
 # =============================================================================
 
-AVAILABLE_MODULES = ["ipm", "asm", "weather", "pwm"]
+AVAILABLE_MODULES = ["ipm", "asm", "weather", "pwm", "rtr", "str", "wss"]
+
+# Module folder paths (relative to PADDISENSE_DIR) for cleanup of unlicensed modules
+MODULE_FOLDERS = {
+    "ipm": ["ipm"],
+    "asm": ["asm"],
+    "weather": ["weather"],
+    "pwm": ["pwm"],
+    "rtr": ["rtr"],
+    "str": ["str"],
+    "wss": ["wss"],
+}
 
 MODULE_METADATA = {
     "ipm": {
@@ -69,6 +80,32 @@ MODULE_METADATA = {
         "icon": "mdi:water",
         "dashboard_slug": "pwm-irrigation",
         "dashboard_title": "Water Management",
+    },
+    "rtr": {
+        "name": "Real Time Rice",
+        "description": "Crop growth predictions from Real Time Rice",
+        "icon": "mdi:rice",
+        "dashboard_slug": "rtr-predictions",
+        "dashboard_title": "Real Time Rice",
+        "dashboard_file": "rtr/dashboards/views.yaml",
+    },
+    "str": {
+        "name": "Stock Tracker",
+        "description": "Livestock inventory and movement tracking",
+        "icon": "mdi:cow",
+        "dashboard_slug": "str-stock",
+        "dashboard_title": "Stock Tracker",
+        "dashboard_file": "str/dashboards/views.yaml",
+        "status": "placeholder",
+    },
+    "wss": {
+        "name": "Worker Safety",
+        "description": "Worker check-in/check-out safety system",
+        "icon": "mdi:account-hard-hat",
+        "dashboard_slug": "wss-safety",
+        "dashboard_title": "Worker Safety",
+        "dashboard_file": "wss/dashboards/views.yaml",
+        "status": "placeholder",
     },
 }
 
@@ -180,8 +217,33 @@ ATTR_INSTALLED_MODULES = "installed_modules"
 ATTR_AVAILABLE_MODULES = "available_modules"
 
 # =============================================================================
+# RTR (Real Time Rice) PATHS
+# =============================================================================
+
+RTR_DATA_DIR = DATA_DIR / "rtr"
+RTR_CONFIG_FILE = RTR_DATA_DIR / "config.json"
+RTR_CACHE_FILE = RTR_DATA_DIR / "data.json"
+
+# =============================================================================
+# RTR SERVICES
+# =============================================================================
+
+SERVICE_SET_RTR_URL = "set_rtr_url"
+SERVICE_REFRESH_RTR = "refresh_rtr_data"
+
+# =============================================================================
+# RTR ATTRIBUTES
+# =============================================================================
+
+ATTR_RTR_URL_SET = "rtr_url_set"
+ATTR_RTR_LAST_UPDATED = "rtr_last_updated"
+ATTR_RTR_PADDOCK_COUNT = "rtr_paddock_count"
+ATTR_RTR_CSV_URL = "rtr_csv_url"
+
+# =============================================================================
 # EVENTS
 # =============================================================================
 
 EVENT_DATA_UPDATED = f"{DOMAIN}_data_updated"
 EVENT_MODULES_CHANGED = f"{DOMAIN}_modules_changed"
+EVENT_RTR_UPDATED = f"{DOMAIN}_rtr_updated"

@@ -154,6 +154,9 @@ def main():
         "registry/__init__.py",
         "registry/backend.py",
         "registry/sensor.py",
+        "rtr/__init__.py",
+        "rtr/backend.py",
+        "rtr/sensor.py",
         "www/paddisense-registry-card.js",
         "www/paddisense-manager-card.js",
         "translations/en.json",
@@ -191,7 +194,7 @@ def main():
     # ==========================================================================
     print_header("4. Module Directories")
 
-    modules = ["ipm", "asm", "weather", "pwm"]
+    modules = ["ipm", "asm", "weather", "pwm", "rtr", "str", "wss"]
     for mod in modules:
         mod_dir = paddisense_dir / mod
         if mod_dir.is_dir():

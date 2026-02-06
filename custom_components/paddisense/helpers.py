@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
+import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -10,6 +12,7 @@ from typing import Any
 import yaml
 
 from .const import (
+    MODULE_FOLDERS,
     PADDISENSE_DIR,
     REGISTRY_BACKUP_DIR,
     REGISTRY_CONFIG_FILE,
@@ -17,6 +20,8 @@ from .const import (
     SERVER_YAML,
     PADDISENSE_VERSION_FILE,
 )
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def generate_id(name: str) -> str:
@@ -178,3 +183,35 @@ def get_repo_summary() -> dict[str, Any]:
     summary["module_count"] = len(installed)
 
     return summary
+
+
+def cleanup_unlicensed_modules(licensed_modules: list[str]) -> dict[str, Any]:
+    """Delete folders for modules not included in the license.
+
+    Args:
+        licensed_modules: List of module IDs the user is licensed for.
+
+    Returns:
+        Dictionary with cleanup results.
+    """
+    removed = []
+    errors = []
+
+    for module_id, folders in MODULE_FOLDERS.items():
+        if module_id not in licensed_modules:
+            for folder in folders:
+                path = PADDISENSE_DIR / folder
+                if path.exists():
+                    try:
+                        shutil.rmtree(path)
+                        removed.append(f"{module_id}/{folder}")
+                        _LOGGER.info("Removed unlicensed module folder: %s", path)
+                    except OSError as e:
+                        errors.append(f"{module_id}/{folder}: {e}")
+                        _LOGGER.warning("Failed to remove folder %s: %s", path, e)
+
+    return {
+        "success": len(errors) == 0,
+        "removed": removed,
+        "errors": errors,
+    }
