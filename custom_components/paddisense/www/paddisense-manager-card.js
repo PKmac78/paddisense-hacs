@@ -446,11 +446,11 @@ class PaddiSenseManagerCard extends HTMLElement {
             </div>
             ` : ''}
             <div class="button-row">
-              <button class="secondary" onclick="this.getRootNode().host._checkUpdates(event)">
+              <button class="secondary" data-action="check-updates">
                 Check for Updates
               </button>
               ${updateAvailable ? `
-              <button class="primary" onclick="this.getRootNode().host._updatePaddisense(event)">
+              <button class="primary" data-action="update">
                 Update Now
               </button>
               ` : ''}
@@ -475,7 +475,7 @@ class PaddiSenseManagerCard extends HTMLElement {
                   <div class="module-deps-info">Required by: ${m.dependents.join(', ')}</div>
                 ` : ''}
                 <div class="module-actions">
-                  <button class="danger" onclick="this.getRootNode().host._removeModule('${m.id}', event)">
+                  <button class="danger" data-action="remove" data-module-id="${m.id}">
                     Remove
                   </button>
                 </div>
@@ -504,7 +504,7 @@ class PaddiSenseManagerCard extends HTMLElement {
                 ` : ''}
                 <div class="module-actions">
                   <button class="${hasMissingDeps ? 'secondary' : 'success'}"
-                          onclick="this.getRootNode().host._installModule('${m.id}', event)"
+                          data-action="install" data-module-id="${m.id}"
                           ${hasMissingDeps ? 'disabled title="Install required modules first"' : ''}>
                     ${hasMissingDeps ? 'Blocked' : 'Install'}
                   </button>
@@ -519,13 +519,13 @@ class PaddiSenseManagerCard extends HTMLElement {
         <div class="section">
           <div class="section-title">Tools</div>
           <div class="tools-grid">
-            <button class="secondary" onclick="this.getRootNode().host._createBackup(event)">
+            <button class="secondary" data-action="backup">
               Create Backup
             </button>
-            <button class="secondary" onclick="this.getRootNode().host._openOptions()">
+            <button class="secondary" data-action="options">
               Restore Backup
             </button>
-            <button class="secondary" onclick="this.getRootNode().host._exportConfig(event)">
+            <button class="secondary" data-action="export">
               Export Registry
             </button>
           </div>
@@ -560,13 +560,13 @@ class PaddiSenseManagerCard extends HTMLElement {
                 placeholder="Paste Real Time Rice dashboard URL..."
                 value=""
               />
-              <button class="primary" onclick="this.getRootNode().host._saveRtrUrl(event)">
+              <button class="primary" data-action="configure-rtr">
                 Save
               </button>
             </div>
             ${rtrConfigured ? `
             <div class="button-row">
-              <button class="secondary" onclick="this.getRootNode().host._refreshRtrData(event)">
+              <button class="secondary" data-action="refresh-rtr">
                 Refresh Data
               </button>
             </div>
@@ -575,6 +575,52 @@ class PaddiSenseManagerCard extends HTMLElement {
         </div>
       </ha-card>
     `;
+
+    // Attach event listeners after render
+    this._attachEventListeners();
+  }
+
+  _attachEventListeners() {
+    // Use event delegation on shadow root
+    this.shadowRoot.querySelectorAll('[data-action]').forEach(button => {
+      button.addEventListener('click', (e) => this._handleAction(e));
+    });
+  }
+
+  _handleAction(event) {
+    const button = event.currentTarget;
+    const action = button.dataset.action;
+    const moduleId = button.dataset.moduleId;
+
+    switch(action) {
+      case 'install':
+        this._installModule(moduleId, event);
+        break;
+      case 'remove':
+        this._removeModule(moduleId, event);
+        break;
+      case 'check-updates':
+        this._checkUpdates(event);
+        break;
+      case 'update':
+        this._updatePaddisense(event);
+        break;
+      case 'backup':
+        this._createBackup(event);
+        break;
+      case 'options':
+        this._openOptions();
+        break;
+      case 'export':
+        this._exportConfig(event);
+        break;
+      case 'configure-rtr':
+        this._saveRtrUrl(event);
+        break;
+      case 'refresh-rtr':
+        this._refreshRtrData(event);
+        break;
+    }
   }
 
   _getModuleIcon(moduleId) {
