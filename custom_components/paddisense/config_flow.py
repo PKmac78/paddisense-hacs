@@ -317,14 +317,13 @@ class PaddiSenseConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self, user_input: dict | None = None
     ) -> FlowResult:
         """Clone the PaddiSense repository."""
+        # Clean up old installation first (preserves local_data)
+        await self.hass.async_add_executor_job(self._cleanup_old_install)
+
         git_manager = GitManager(token=self._data.get(CONF_GITHUB_TOKEN))
 
-        is_cloned = await self.hass.async_add_executor_job(git_manager.is_repo_cloned)
-
-        if is_cloned:
-            result = await self.hass.async_add_executor_job(git_manager.pull)
-        else:
-            result = await self.hass.async_add_executor_job(git_manager.clone)
+        # Always do fresh clone after cleanup
+        result = await self.hass.async_add_executor_job(git_manager.clone)
 
         if not result.get("success"):
             return self.async_abort(
@@ -333,6 +332,54 @@ class PaddiSenseConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
 
         return await self.async_step_install()
+
+    def _cleanup_old_install(self) -> None:
+        """Clean up old installation while preserving local data."""
+        import shutil
+        from .const import PADDISENSE_DIR, PACKAGES_DIR, DATA_DIR, LOVELACE_DASHBOARDS_YAML
+
+        _LOGGER.info("Cleaning up old PaddiSense installation...")
+
+        # Backup local_data if it exists inside PaddiSense dir
+        local_data_backup = None
+        old_local_data = PADDISENSE_DIR / "local_data"
+        if old_local_data.exists():
+            local_data_backup = Path("/config/.paddisense_data_backup")
+            if local_data_backup.exists():
+                shutil.rmtree(local_data_backup)
+            shutil.copytree(old_local_data, local_data_backup)
+            _LOGGER.info("Backed up local_data")
+
+        # Remove old PaddiSense directory
+        if PADDISENSE_DIR.exists():
+            shutil.rmtree(PADDISENSE_DIR)
+            _LOGGER.info("Removed old PaddiSense directory")
+
+        # Clean old package symlinks
+        if PACKAGES_DIR.exists():
+            for item in PACKAGES_DIR.iterdir():
+                if item.is_symlink() or item.suffix == ".yaml":
+                    item.unlink()
+            _LOGGER.info("Cleaned old package symlinks")
+
+        # Clear lovelace_dashboards.yaml
+        if LOVELACE_DASHBOARDS_YAML.exists():
+            LOVELACE_DASHBOARDS_YAML.unlink()
+            _LOGGER.info("Removed old lovelace_dashboards.yaml")
+
+        # Restore local_data to proper location
+        if local_data_backup and local_data_backup.exists():
+            DATA_DIR.mkdir(parents=True, exist_ok=True)
+            for item in local_data_backup.iterdir():
+                target = DATA_DIR / item.name
+                if item.is_dir():
+                    if target.exists():
+                        shutil.rmtree(target)
+                    shutil.copytree(item, target)
+                else:
+                    shutil.copy2(item, target)
+            shutil.rmtree(local_data_backup)
+            _LOGGER.info("Restored local_data to %s", DATA_DIR)
 
     async def async_step_install(
         self, user_input: dict | None = None
