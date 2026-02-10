@@ -256,95 +256,91 @@ class PaddiSenseManagerCard extends HTMLElement {
           color: white;
         }
 
-        .modules-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        .module-list {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .module-row {
+          display: flex;
+          align-items: center;
           gap: 12px;
-        }
-
-        .module-card {
           background: rgba(255,255,255,0.05);
-          border-radius: 12px;
-          padding: 16px;
-          text-align: center;
+          border-radius: 8px;
+          padding: 12px 16px;
         }
 
-        .module-card.installed {
+        .module-row.installed {
           border-left: 3px solid var(--success-color);
         }
 
-        .module-card.required {
-          border-left: 3px solid var(--primary-color);
-        }
-
-        .module-deps-info {
-          font-size: 0.75em;
-          color: var(--primary-color);
-          margin: 4px 0;
-          padding: 4px 8px;
-          background: rgba(3, 169, 244, 0.1);
-          border-radius: 4px;
-        }
-
-        .module-card.available {
+        .module-row.available {
           border-left: 3px solid var(--text-secondary);
         }
 
-        .module-card.blocked {
-          opacity: 0.7;
-          border-left: 3px solid var(--warning-color);
-        }
-
-        .module-deps-warning {
-          font-size: 0.75em;
-          color: var(--warning-color);
-          margin: 4px 0;
-          padding: 4px 8px;
-          background: rgba(255, 193, 7, 0.1);
-          border-radius: 4px;
-        }
-
         .module-icon {
-          font-size: 2em;
-          margin-bottom: 8px;
+          font-size: 1.5em;
+          width: 40px;
+          text-align: center;
+        }
+
+        .module-info {
+          flex: 1;
         }
 
         .module-name {
           font-weight: 600;
           color: var(--text-primary);
-          margin-bottom: 4px;
+          font-size: 1em;
         }
 
         .module-version {
-          font-size: 0.85em;
+          font-size: 0.8em;
           color: var(--text-secondary);
-          margin-bottom: 8px;
         }
 
         .module-status {
-          font-size: 0.8em;
+          font-size: 0.75em;
           padding: 4px 8px;
-          border-radius: 12px;
-          display: inline-block;
+          border-radius: 4px;
+          text-transform: uppercase;
+          font-weight: 600;
         }
 
-        .module-status.current {
+        .module-status.installed {
           background: rgba(40, 167, 69, 0.2);
           color: var(--success-color);
         }
 
-        .module-status.update {
-          background: rgba(255, 193, 7, 0.2);
-          color: var(--warning-color);
+        .module-status.available {
+          background: rgba(255,255,255,0.1);
+          color: var(--text-secondary);
         }
 
-        .module-actions {
-          margin-top: 12px;
+        .module-btn {
+          min-width: 80px;
+          padding: 8px 16px;
+          border: none;
+          border-radius: 6px;
+          font-weight: 600;
+          cursor: pointer;
+          font-size: 0.9em;
         }
 
-        .module-actions button {
-          padding: 8px 12px;
-          font-size: 0.8em;
+        .module-btn.success {
+          background: var(--success-color);
+          color: white;
+        }
+
+        .module-btn.danger {
+          background: var(--danger-color);
+          color: white;
+        }
+
+        .module-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
         }
 
         .empty-state {
@@ -458,62 +454,30 @@ class PaddiSenseManagerCard extends HTMLElement {
           </div>
         </div>
 
-        <!-- Installed Modules Section -->
+        <!-- Modules Section -->
         <div class="section">
-          <div class="section-title">Installed Modules</div>
-          ${installedModules.length > 0 ? `
-          <div class="modules-grid">
-            ${installedModules.map(m => {
-              const hasDependents = m.dependents && m.dependents.length > 0;
-              return `
-              <div class="module-card installed ${hasDependents ? 'required' : ''}">
+          <div class="section-title">Modules</div>
+          <div class="module-list">
+            ${this._getAllModules(installedModules, availableModules).map(m => `
+              <div class="module-row ${m.installed ? 'installed' : 'available'}">
                 <div class="module-icon">${this._getModuleIcon(m.id)}</div>
-                <div class="module-name">${m.name || m.id}</div>
-                <div class="module-version">v${m.version || 'unknown'}</div>
-                <div class="module-status current">Installed</div>
-                ${hasDependents ? `
-                  <div class="module-deps-info">Required by: ${m.dependents.join(', ')}</div>
-                ` : ''}
-                <div class="module-actions">
-                  <button class="danger" data-action="remove" data-module-id="${m.id}">
-                    Remove
-                  </button>
+                <div class="module-info">
+                  <div class="module-name">${m.name || m.id}</div>
+                  <div class="module-version">v${m.version || 'unknown'}</div>
                 </div>
-              </div>
-            `}).join('')}
-          </div>
-          ` : `
-          <div class="empty-state">No modules installed</div>
-          `}
-        </div>
-
-        <!-- Available Modules Section -->
-        ${availableModules.length > 0 ? `
-        <div class="section">
-          <div class="section-title">Available Modules</div>
-          <div class="modules-grid">
-            ${availableModules.map(m => {
-              const hasMissingDeps = m.missing_dependencies && m.missing_dependencies.length > 0;
-              return `
-              <div class="module-card available ${hasMissingDeps ? 'blocked' : ''}">
-                <div class="module-icon">${this._getModuleIcon(m.id)}</div>
-                <div class="module-name">${m.name || m.id}</div>
-                <div class="module-version">v${m.version || 'unknown'}</div>
-                ${hasMissingDeps ? `
-                  <div class="module-deps-warning">Requires: ${m.missing_dependencies.join(', ')}</div>
-                ` : ''}
-                <div class="module-actions">
-                  <button class="${hasMissingDeps ? 'secondary' : 'success'}"
-                          data-action="install" data-module-id="${m.id}"
-                          ${hasMissingDeps ? 'disabled title="Install required modules first"' : ''}>
-                    ${hasMissingDeps ? 'Blocked' : 'Install'}
-                  </button>
+                <div class="module-status ${m.installed ? 'installed' : 'available'}">
+                  ${m.installed ? 'Installed' : 'Available'}
                 </div>
+                <button class="module-btn ${m.installed ? 'danger' : 'success'}"
+                        data-action="${m.installed ? 'remove' : 'install'}"
+                        data-module-id="${m.id}"
+                        ${m.blocked ? 'disabled' : ''}>
+                  ${m.installed ? 'Remove' : (m.blocked ? 'Blocked' : 'Install')}
+                </button>
               </div>
-            `}).join('')}
+            `).join('')}
           </div>
         </div>
-        ` : ''}
 
         <!-- Tools Section -->
         <div class="section">
@@ -623,6 +587,32 @@ class PaddiSenseManagerCard extends HTMLElement {
     }
   }
 
+  _getAllModules(installed, available) {
+    // Combine installed and available into single list
+    const all = [];
+
+    // Add installed modules
+    for (const m of installed) {
+      all.push({
+        ...m,
+        installed: true,
+        blocked: false,
+      });
+    }
+
+    // Add available modules
+    for (const m of available) {
+      const hasMissingDeps = m.missing_dependencies && m.missing_dependencies.length > 0;
+      all.push({
+        ...m,
+        installed: false,
+        blocked: hasMissingDeps,
+      });
+    }
+
+    return all;
+  }
+
   _getModuleIcon(moduleId) {
     const icons = {
       'ipm': '📦',
@@ -632,7 +622,7 @@ class PaddiSenseManagerCard extends HTMLElement {
       'rtr': '🌾',
       'str': '🐄',
       'wss': '👷',
-      'hfm': '🎤',
+      'hfm': '🌿',
     };
     return icons[moduleId] || '📦';
   }
